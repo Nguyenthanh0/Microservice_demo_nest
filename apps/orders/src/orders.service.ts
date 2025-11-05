@@ -6,6 +6,7 @@ import { ClientKafka, EventPattern, Payload } from '@nestjs/microservices';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateOrderDto } from './dto/createOrder.dto';
 import { Kafka } from 'kafkajs';
+import { OrderGateway } from './order.gateway';
 
 export enum UserRole {
   USER = 'USER',
@@ -40,6 +41,7 @@ export class OrdersService implements OnModuleInit {
   constructor(
     @InjectModel(Order.name) private readonly orderModel: Model<Order>,
     @Inject('KAFKA_SERVICE') private readonly KafkaClient: ClientKafka,
+    private readonly orderGateway: OrderGateway,
   ) {}
   async onModuleInit() {
     await this.KafkaClient.connect();
@@ -104,16 +106,31 @@ export class OrdersService implements OnModuleInit {
     if (!order) throw new Error('Order not found');
     if (paymentStatus === 'SUCCESS') {
       order.orderStatus = ORDERSTATUS.CONFIRMED;
+      this.orderGateway.sendOrderStatus(
+        order.orderId,
+        order.orderStatus,
+        order.userId,
+      );
       this.logger.debug('order confirmed');
       await order.save();
       setTimeout(() => {
         order.orderStatus = ORDERSTATUS.DELIVERED;
         order.save().catch(() => {});
+        this.orderGateway.sendOrderStatus(
+          order.orderId,
+          order.orderStatus,
+          order.userId,
+        );
         this.logger.debug('order delivered');
       }, 5000);
     } else {
       order.orderStatus = ORDERSTATUS.CANCELLED;
       await order.save();
+      this.orderGateway.sendOrderStatus(
+        order.orderId,
+        order.orderStatus,
+        order.userId,
+      );
       this.logger.debug('order cancelled');
     }
   }
