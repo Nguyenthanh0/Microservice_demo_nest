@@ -21,6 +21,10 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "paths": {}
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "paths": {
+      "@libs/*": ["libs/*"]
+    }
   }
 }
