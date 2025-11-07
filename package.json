@@ -21,10 +21,11 @@
     "start:users": "nest start users --watch",
     "start:orders": "nest start orders --watch",
     "start:payment": "nest start payment --watch",
+    "start:apigateway": "nest start api-gateway --watch",
     "start:user:prod": "node dist/apps/users/src/main.js",
     "start:order:prod": "node dist/apps/orders/main.js",
     "start:payment:prod": "node dist/apps/payment/main.js",
-    "start:all": "concurrently \"npm run start:users\" \"npm run start:orders\" \"npm run start:payment\""
+    "start:all": "concurrently \"npm run start:users\" \"npm run start:orders\" \"npm run start:payment\" "
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

@@ -11,6 +11,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { Partitioners } from 'kafkajs';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '@libs/common/passport/jwt.strategy';
+import { OrderGateway } from './order.gateway';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { JwtStrategy } from '@libs/common/passport/jwt.strategy';
     OrdersService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     JwtStrategy,
+    OrderGateway,
   ],
 })
 export class OrdersModule {}

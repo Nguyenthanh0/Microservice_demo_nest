@@ -1,43 +1,29 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Order, ORDERSTATUS } from './entities/order.schema';
 import { Model } from 'mongoose';
-import { ClientKafka, EventPattern, Payload } from '@nestjs/microservices';
+import { ClientKafka } from '@nestjs/microservices';
+import { OrderGateway } from './order.gateway';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateOrderDto } from './dto/createOrder.dto';
-import { Kafka } from 'kafkajs';
-import { OrderGateway } from './order.gateway';
 
-export enum UserRole {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
-  MODERATOR = 'MODERATOR',
-}
-export interface JwtUser {
-  _id: string;
-  identifier: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  sub: string;
-}
-interface PaymentValue {
+export interface OrderValue {
   orderId: string;
   userId: string;
+  price: number;
+  content: any[];
   paymentStatus: string;
 }
 
 @Injectable()
-export class OrdersService implements OnModuleInit {
+export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
-  private readonly kafka = new Kafka({
-    clientId: 'orders-consumer-raw',
-    brokers: ['localhost:9092'], // 💡 Dùng địa chỉ đã hoạt động
-  });
-  // tạo consumer thủ công
-  private readonly consumer = this.kafka.consumer({
-    groupId: 'orders-consumer-final',
-  });
+
   constructor(
     @InjectModel(Order.name) private readonly orderModel: Model<Order>,
     @Inject('KAFKA_SERVICE') private readonly KafkaClient: ClientKafka,
@@ -46,43 +32,15 @@ export class OrdersService implements OnModuleInit {
   async onModuleInit() {
     await this.KafkaClient.connect();
     this.logger.debug('Kafka Client (Producer) connected in OrdersService');
-
-    // connect consumer
-    await this.consumer.connect();
-    // sub topic/event
-    await this.consumer.subscribe({
-      topic: 'payment-processed',
-      fromBeginning: true,
-    });
-
-    // nhận data từ kafka
-    await this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        if (!message.value) {
-          this.logger.warn('Received empty Kafka message value', {
-            topic,
-            partition,
-          });
-          return;
-        }
-        const paymentValue = JSON.parse(
-          message.value.toString(),
-        ) as PaymentValue;
-        await this.handlePaymentProcessed(paymentValue);
-      },
-    });
-    this.logger.debug(
-      'Raw Kafka Consumer is running and subscribed to payment-processed',
-    );
   }
 
-  async create(userId: string, createOrderDto: CreateOrderDto) {
+  async create(userId: string, data: CreateOrderDto) {
     const orderId = uuidv4().slice(0, 5);
     const order = await this.orderModel.create({
       orderId: orderId,
       userId: userId,
-      price: createOrderDto.price,
-      content: createOrderDto.content,
+      price: data.price,
+      content: data.content,
       orderStatus: ORDERSTATUS.CREATED,
     });
 
@@ -95,11 +53,11 @@ export class OrdersService implements OnModuleInit {
     });
 
     this.logger.debug('order-created-event sent');
-    return order;
+    return { message: 'Order created', order };
   }
 
-  async handlePaymentProcessed(@Payload() data: PaymentValue) {
-    console.log('nhận message thành công :', data);
+  async handlePaymentProcessed(data: OrderValue) {
+    console.log('nhận payment result :', data);
 
     const { orderId, paymentStatus } = data;
     const order = await this.orderModel.findOne({ orderId: orderId });

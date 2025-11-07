@@ -5,10 +5,16 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { ORDERCONTENT } from '../entities/order.schema';
 import { Type } from 'class-transformer';
 
-class OrderContentDto implements ORDERCONTENT {
+export interface ORDERCONTENT {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+}
+
+export class OrderContentDto implements ORDERCONTENT {
   @IsOptional()
   @IsString()
   productId: string;

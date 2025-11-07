@@ -1,11 +1,11 @@
-import { Controller, Get, Inject } from '@nestjs/common';
-import { PaymentService } from './payment.service';
-import { ClientKafka } from '@nestjs/microservices';
+import { Controller, Inject } from '@nestjs/common';
+import * as paymentService_1 from './payment.service';
+import { ClientKafka, EventPattern, Payload } from '@nestjs/microservices';
 
 @Controller('payment')
 export class PaymentController {
   constructor(
-    private readonly paymentService: PaymentService,
+    private readonly paymentService: paymentService_1.PaymentService,
     @Inject('KAFKA_SERVICE') private readonly KafkaClient: ClientKafka,
   ) {}
   // @Get('test-event')
@@ -23,4 +23,9 @@ export class PaymentController {
 
   //   return { status: 'Test event sent to Kafka. Check logs for consumption.' };
   // }
+
+  @EventPattern('order-created')
+  handleOrderCreated(@Payload() order: paymentService_1.OrderValue) {
+    return this.paymentService.handleOrderCreated(order);
+  }
 }

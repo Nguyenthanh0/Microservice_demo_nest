@@ -1,8 +1,7 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ClientKafka, EventPattern, Payload } from '@nestjs/microservices';
-import { Kafka } from 'kafkajs';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientKafka, Payload } from '@nestjs/microservices';
 
-interface OrderValue {
+export interface OrderValue {
   orderId: string;
   userId: string;
   price: number;
@@ -11,54 +10,17 @@ interface OrderValue {
 }
 
 @Injectable()
-export class PaymentService implements OnModuleInit {
+export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
   constructor(
     @Inject('KAFKA_SERVICE') private readonly KafkaClient: ClientKafka,
   ) {}
-  // Khởi tạo Consumer trực tiếp
-  private readonly kafka = new Kafka({
-    clientId: 'payment-consumer-raw',
-    brokers: ['localhost:9092'], // 💡 Dùng địa chỉ đã hoạt động
-  });
-  private readonly consumer = this.kafka.consumer({
-    groupId: 'payments-consumer-raw',
-  });
-
-  // ... constructor ...
-
   async onModuleInit() {
-    // 1. Kết nối Producer Client Kafka (để emit payment-processed)
     await this.KafkaClient.connect();
-    this.logger.debug('Kafka Client (Producer) connected in PaymentService');
-
-    // 2. Kết nối và Chạy Consumer KafkaJS
-    await this.consumer.connect();
-    await this.consumer.subscribe({
-      topic: 'order-created',
-      fromBeginning: true,
-    });
-
-    // 3. Xử lý message nhận được
-    await this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        if (!message.value) {
-          this.logger.warn(
-            'Received message with null or empty value, skipping',
-          );
-          return;
-        }
-        const order = JSON.parse(message.value.toString()) as OrderValue;
-
-        await this.handleOrderCreated(order);
-      },
-    });
-    this.logger.log(
-      'Raw Kafka Consumer is running and subscribed to test-created',
-    );
+    this.logger.debug('Kafka Client (Producer) connected in OrdersService');
   }
 
-  async handleOrderCreated(@Payload() order: OrderValue) {
+  async handleOrderCreated(order: OrderValue) {
     console.log('Nhận order:', order);
 
     const isSuccess = Math.random() > 0.5;
@@ -80,4 +42,3 @@ export class PaymentService implements OnModuleInit {
     console.log('consumer đã hoạt động');
   }
 }
-//
