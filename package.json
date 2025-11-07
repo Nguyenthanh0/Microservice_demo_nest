@@ -8,7 +8,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
-    "start": "nest start",
+    "start": "nest start --watch",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/apps/micro-nest/main",
@@ -17,7 +17,15 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./apps/micro-nest/test/jest-e2e.json"
+    "test:e2e": "jest --config ./apps/micro-nest/test/jest-e2e.json",
+    "start:users": "nest start users --watch",
+    "start:orders": "nest start orders --watch",
+    "start:payment": "nest start payment --watch",
+    "start:apigateway": "nest start api-gateway --watch",
+    "start:user:prod": "node dist/apps/users/src/main.js",
+    "start:order:prod": "node dist/apps/orders/main.js",
+    "start:payment:prod": "node dist/apps/payment/main.js",
+    "start:all": "concurrently \"npm run start:users\" \"npm run start:orders\" \"npm run start:payment\" "
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -28,6 +36,7 @@
     "@nestjs/mongoose": "^11.0.3",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-socket.io": "^11.1.8",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
@@ -35,8 +44,10 @@
     "lodash": "^4.17.21",
     "mongoose": "^8.19.2",
     "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "socket.io": "^4.8.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
@@ -51,6 +62,7 @@
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
+    "concurrently": "^9.2.1",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
